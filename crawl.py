@@ -6,11 +6,11 @@ import Queue
 from threading import Thread
 
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
-ROOT_USER = "rj"
+ROOT_USER = "RJ"
 BASE_LIMIT = 500
 NUM_PROCESSES = 5
 NUM_LEVELS = 3
-NUM_THREADS = 1000
+NUM_THREADS = 100
 
 
 def fetch_vertex(user, limit, page):
@@ -46,12 +46,15 @@ def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
 if __name__ == '__main__':
       bfs_queue = collections.deque([ROOT_USER])
       level_count = 0
-      visited = collections.deque()
+      visited = set()
 
       while (len(bfs_queue) != 0 and level_count < NUM_LEVELS):
           level_count += 1 
           degree_queue = collections.deque()
           friends_queue = collections.deque()
+
+          tmp = list(bfs_queue)[0:]
+          #print tmp, bfs_queue, visited
           threads = [Thread(target=worker_function, args=(bfs_queue, degree_queue, friends_queue, visited)) for i in xrange(NUM_THREADS)]
 
           for t in threads:
@@ -59,7 +62,7 @@ if __name__ == '__main__':
           for t in threads:
               t.join()
 
-          visited = collections.deque()
-
+          visited = visited.union(set(tmp))
           bfs_queue = friends_queue
           print "LEVEL %s done" %(level_count)
+          #print tmp, bfs_queue, visited
