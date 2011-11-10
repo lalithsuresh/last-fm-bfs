@@ -39,39 +39,39 @@ def fetch_vertex(user, limit, page):
 
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
     while len(nodes_to_visit) != 0:
-            node = nodes_to_visit.popleft()
+        node = nodes_to_visit.popleft()
 
-            if (node not in visited_list):
-                degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
+        if (node not in visited_list):
+            degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
 
-                if (degree != None and friends != None):
-                    degree_queue.append(degree)        
-                    #print "Visited " + str(node) + " " + str(degree)
-                    friends_queue.extend(friends)
+            if (degree != None and friends != None):
+                #print "Visited " + str(node) + " " + str(degree)
+                degree_queue.append(degree)        
+                friends_queue.extend(friends)
 
 
 if __name__ == '__main__':
-      bfs_queue = collections.deque([ROOT_USER])
-      level_count = 0
-      visited = set()
+    bfs_queue = collections.deque([ROOT_USER])
+    level_count = 0
+    visited = set()
 
-      while (len(bfs_queue) != 0 and level_count < NUM_LEVELS):
-          level_count += 1 
-          degree_queue = collections.deque()
-          friends_queue = collections.deque()
+    while (len(bfs_queue) != 0 and level_count < NUM_LEVELS):
+        level_count += 1 
+        degree_queue = collections.deque()
+        friends_queue = collections.deque()
 
-          tmp = list(bfs_queue)[0:]
-          #print tmp, bfs_queue, visited
-          threads = [Thread(target=worker_function, \
+        tmp = list(bfs_queue)[0:]
+        #print tmp, bfs_queue, visited
+        threads = [Thread(target=worker_function, \
               args=(bfs_queue, degree_queue, friends_queue, visited))\
               for i in xrange(NUM_THREADS)]
 
-          for t in threads:
-              t.start()
-          for t in threads:
-              t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
-          visited = visited.union(set(tmp))
-          bfs_queue = friends_queue
-          print "LEVEL %s done, %s nodes would have been sampled after level %s"\
+        visited = visited.union(set(tmp))
+        bfs_queue = friends_queue
+        print "LEVEL %s done, %s nodes would have been sampled after level %s"\
               % (level_count, reduce(lambda x, y: x + y, degree_queue), level_count + 1)
