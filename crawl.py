@@ -1,20 +1,21 @@
 import urllib2
 import re
 import collections
-import sys
+import sys,os,signal
 from threading import Thread
 
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
 BASE_LIMIT = 500
 NUM_PROCESSES = 5
-NUM_LEVELS = 3
+NUM_LEVELS = 10
 NUM_THREADS = 100
 
-
 def fetch_vertex(user, limit, page):
+    #Consider a space in the user name
+    temp_user="%20".join(user.split(' ')) 
     command = "http://ws.audioscrobbler.com/2.0/?method=user.getfriends"\
-              + "&user=" + user\
+              + "&user=" + temp_user\
               + "&limit=" + str(limit)\
               + "&page=" + str(page)\
               + "&api_key=" +API_KEY
@@ -37,6 +38,12 @@ def fetch_vertex(user, limit, page):
         return (None, None)
 
 
+def sigterm_handler(signum, frame):
+    print "\nSIGINT handler.  Shutting Down."
+    global SIGINT_SENT
+    os.kill(os.getpid(), signal.SIGINT)
+    sys.exit()
+
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
     while len(nodes_to_visit) != 0:
         node = nodes_to_visit.popleft()
@@ -45,7 +52,7 @@ def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
             degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
 
             if (degree != None and friends != None):
-                #print "Visited " + str(node) + " " + str(degree)
+                # print "Visited " + str(node) + " " + str(degree)
                 degree_queue.append(degree)        
                 friends_queue.extend(friends)
 
@@ -54,7 +61,8 @@ if __name__ == '__main__':
     bfs_queue = collections.deque([ROOT_USER])
     level_count = 0
     visited = set()
-
+    signal.signal(signal.SIGINT, sigterm_handler)
+    
     while (len(bfs_queue) != 0 and level_count < NUM_LEVELS):
         level_count += 1 
         degree_queue = collections.deque()
@@ -67,11 +75,16 @@ if __name__ == '__main__':
               for i in xrange(NUM_THREADS)]
 
         for t in threads:
+            t.setDaemon(True)
             t.start()
         for t in threads:
             t.join()
+        
 
         visited = visited.union(set(tmp))
         bfs_queue = friends_queue
-        print "LEVEL %s done, %s nodes would have been sampled after level %s"\
-              % (level_count, reduce(lambda x, y: x + y, degree_queue), level_count + 1)
+        #Some estimators, will change in the future
+        sum = reduce(lambda x, y: x + y, degree_queue)
+        avg = float(sum) / len(degree_queue)
+        print "LEVEL %s done, %s nodes with avg dregree %s would have been sampled after level %s"\
+              % (level_count,sum, avg,  level_count + 1)
