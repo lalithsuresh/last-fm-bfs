@@ -1,0 +1,24 @@
+last.fm social graph exploration using BFS
+==========================================
+
+Breadth first search algorithm using multiple threads to perform Last.fm API calls.
+
+Breadth first search exhausts each level before moving into the next.
+We assign a pool of Nodes (friends_queue) to retrieve from the remote site, 
+and threads consume each of these nodes and wait before moving to the next level.
+
+We start by arbitrarily exploring user 'RJ' because the social graph from LastFM is not fully connected:
+                
+                  'RJ'                          Level0
+                    |
+      ______________________________
+      /          |                  \
+    Friend1   Friend-i     ...      FriendN     Level1
+    /..\       /..\                  /..\
+                                                LevelN
+
+The number of Levels as well as the number of threads are parameter values.
+--
+by: Lalith Suresh
+    Mariano Vallés
+    EMDC - KTH 2011

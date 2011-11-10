@@ -2,13 +2,14 @@ import urllib2
 import re
 import collections
 import sys,os,signal
+import datamanip as dm
 from threading import Thread
 
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
 BASE_LIMIT = 500
 NUM_PROCESSES = 5
-NUM_LEVELS = 10
+NUM_LEVELS = 2
 NUM_THREADS = 100
 
 def fetch_vertex(user, limit, page):
@@ -88,3 +89,4 @@ if __name__ == '__main__':
         avg = float(sum) / len(degree_queue)
         print "LEVEL %s done, %s nodes with avg dregree %s would have been sampled after level %s"\
               % (level_count,sum, avg,  level_count + 1)
+    dm.plot_histogram(list(degree_queue))
