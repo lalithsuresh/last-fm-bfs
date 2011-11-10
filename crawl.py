@@ -62,7 +62,9 @@ if __name__ == '__main__':
 
           tmp = list(bfs_queue)[0:]
           #print tmp, bfs_queue, visited
-          threads = [Thread(target=worker_function, args=(bfs_queue, degree_queue, friends_queue, visited)) for i in xrange(NUM_THREADS)]
+          threads = [Thread(target=worker_function, \
+              args=(bfs_queue, degree_queue, friends_queue, visited))\
+              for i in xrange(NUM_THREADS)]
 
           for t in threads:
               t.start()
@@ -71,5 +73,5 @@ if __name__ == '__main__':
 
           visited = visited.union(set(tmp))
           bfs_queue = friends_queue
-          print "LEVEL %s done" %(level_count)
-          #print tmp, bfs_queue, visited
+          print "LEVEL %s done, %s nodes would have been sampled after level %s"\
+              % (level_count, reduce(lambda x, y: x + y, degree_queue), level_count + 1)
