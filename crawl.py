@@ -1,8 +1,7 @@
 import urllib2
 import re
 import collections
-import multiprocessing
-import Queue
+import sys
 from threading import Thread
 
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
@@ -19,16 +18,23 @@ def fetch_vertex(user, limit, page):
               + "&limit=" + str(limit)\
               + "&page=" + str(page)\
               + "&api_key=" +API_KEY
-    data = urllib2.urlopen(command).read() # XML format
-    degree = int(re.search('total="(\d+)"', data).group(1)) # first 10 friends (because page=1 and limit=10).
-    friends = re.findall("<name>(.*)</name>", data) # number of friends of "rj"
-    totalpages = int(re.search('totalPages="(\d+)"', data).group(1))
+    try:
+        data = urllib2.urlopen(command).read() # XML format
+        degree = int(re.search('total="(\d+)"', data).group(1)) # first 10 friends (because page=1 and limit=10).
+        friends = re.findall("<name>(.*)</name>", data) # number of friends of "rj"
+        totalpages = int(re.search('totalPages="(\d+)"', data).group(1))
 
 
-    if (totalpages - page != 0):
-        friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
+        if (totalpages - page != 0):
+            friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
 
-    return (degree, friends)
+        return (degree, friends)
+    except:
+        print
+        print "URL Fetch failed for node: '" + user + "' with error: ", sys.exc_info()[0]
+        print "Executed command: " + command
+        print
+        return (None, None)
 
 
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
@@ -37,10 +43,11 @@ def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
 
             if (node not in visited_list):
                 degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
-                degree_queue.append(degree)
-            
-                print "Visited " + str(node) + " " + str(degree)
-                friends_queue.extend(friends)
+
+                if (degree != None and friends != None):
+                    degree_queue.append(degree)        
+                    #print "Visited " + str(node) + " " + str(degree)
+                    friends_queue.extend(friends)
 
 
 if __name__ == '__main__':
