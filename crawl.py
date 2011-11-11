@@ -9,8 +9,8 @@ API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
 BASE_LIMIT = 500
 NUM_PROCESSES = 5
-NUM_LEVELS = 2
-NUM_THREADS = 100
+NUM_LEVELS =4
+NUM_THREADS = 200
 
 def fetch_vertex(user, limit, page):
     #Consider a space in the user name
@@ -28,6 +28,7 @@ def fetch_vertex(user, limit, page):
 
 
         if (totalpages - page != 0):
+            print page
             friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
 
         return (degree, friends)
@@ -53,7 +54,7 @@ def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
             degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
 
             if (degree != None and friends != None):
-                # print "Visited " + str(node) + " " + str(degree)
+                print "Visited " + str(node) + " " + str(degree)
                 degree_queue.append(degree)        
                 friends_queue.extend(friends)
 
@@ -89,4 +90,6 @@ if __name__ == '__main__':
         avg = float(sum) / len(degree_queue)
         print "LEVEL %s done, %s nodes with avg dregree %s would have been sampled after level %s"\
               % (level_count,sum, avg,  level_count + 1)
-    dm.plot_histogram(list(degree_queue))
+    print list(degree_queue)
+    dm.prepare_data(list(degree_queue))
+
