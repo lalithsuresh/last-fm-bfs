@@ -29,9 +29,9 @@ def prepare_data(degree_list):
         i+=1
     plot_xy (np.array(x_list), np.array(y_list))
     
-    print y_list
-    print
-    print degree_list
+   # print y_list
+   # print
+   # print degree_list
 
 
 if __name__ == '__main__':

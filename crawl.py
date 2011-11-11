@@ -7,10 +7,18 @@ from threading import Thread
 
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
-BASE_LIMIT = 500
-NUM_PROCESSES = 5
-NUM_LEVELS =4
+BASE_LIMIT = 1000
+NUM_LEVELS = 3
 NUM_THREADS = 200
+MAX_FRIENDS_ALLOWED = 10000
+
+
+def sigterm_handler(signum, frame):
+    print "\nSIGINT handler.  Shutting Down."
+    global SIGINT_SENT
+    os.kill(os.getpid(), signal.SIGINT)
+    sys.exit()
+
 
 def fetch_vertex(user, limit, page):
     #Consider a space in the user name
@@ -25,10 +33,11 @@ def fetch_vertex(user, limit, page):
         degree = int(re.search('total="(\d+)"', data).group(1)) # first 10 friends (because page=1 and limit=10).
         friends = re.findall("<name>(.*)</name>", data) # number of friends of "rj"
         totalpages = int(re.search('totalPages="(\d+)"', data).group(1))
-
-
+        #Some corner cases
+        if (degree > MAX_FRIENDS_ALLOWED or totalpages == 0):
+            return (None,None)
         if (totalpages - page != 0):
-            print page
+            print user, page," of ",totalpages
             friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
 
         return (degree, friends)
@@ -39,13 +48,6 @@ def fetch_vertex(user, limit, page):
         print
         return (None, None)
 
-
-def sigterm_handler(signum, frame):
-    print "\nSIGINT handler.  Shutting Down."
-    global SIGINT_SENT
-    os.kill(os.getpid(), signal.SIGINT)
-    sys.exit()
-
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
     while len(nodes_to_visit) != 0:
         node = nodes_to_visit.popleft()
@@ -54,10 +56,9 @@ def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
             degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
 
             if (degree != None and friends != None):
-                print "Visited " + str(node) + " " + str(degree)
+                #print "Visited " + str(node) + " " + str(degree)
                 degree_queue.append(degree)        
                 friends_queue.extend(friends)
-
 
 if __name__ == '__main__':
     bfs_queue = collections.deque([ROOT_USER])
@@ -81,15 +82,12 @@ if __name__ == '__main__':
             t.start()
         for t in threads:
             t.join()
-        
 
         visited = visited.union(set(tmp))
         bfs_queue = friends_queue
-        #Some estimators, will change in the future
+        
         sum = reduce(lambda x, y: x + y, degree_queue)
         avg = float(sum) / len(degree_queue)
-        print "LEVEL %s done, %s nodes with avg dregree %s would have been sampled after level %s"\
-              % (level_count,sum, avg,  level_count + 1)
-    print list(degree_queue)
+        print "LEVEL %s done with avg degree is %s, %s nodes would have been sampled after level %s"\
+              % (level_count, avg,sum,  level_count + 1)
     dm.prepare_data(list(degree_queue))
-
