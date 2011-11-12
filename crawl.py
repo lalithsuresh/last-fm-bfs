@@ -8,10 +8,9 @@ from threading import Thread
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
 BASE_LIMIT = 1000
-NUM_LEVELS = 3
+NUM_LEVELS = 2
 NUM_THREADS = 200
 MAX_FRIENDS_ALLOWED = 10000
-
 
 def sigterm_handler(signum, frame):
     print "\nSIGINT handler.  Shutting Down."
@@ -37,7 +36,7 @@ def fetch_vertex(user, limit, page):
         if (degree > MAX_FRIENDS_ALLOWED or totalpages == 0):
             return (None,None)
         if (totalpages - page != 0):
-            print user, page," of ",totalpages
+            print user, page,"of",totalpages
             friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
 
         return (degree, friends)
@@ -50,6 +49,7 @@ def fetch_vertex(user, limit, page):
 
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
     while len(nodes_to_visit) != 0:
+        print len(nodes_to_visit)
         node = nodes_to_visit.popleft()
 
         if (node not in visited_list):
@@ -90,4 +90,5 @@ if __name__ == '__main__':
         avg = float(sum) / len(degree_queue)
         print "LEVEL %s done with avg degree is %s, %s nodes would have been sampled after level %s"\
               % (level_count, avg,sum,  level_count + 1)
+    dm.savetofile(list(degree_queue))
     dm.prepare_data(list(degree_queue))
