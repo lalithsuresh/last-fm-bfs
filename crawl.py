@@ -8,7 +8,7 @@ from threading import Thread
 API_KEY = '1b4218629b50c1159e15a6b8285b90ba'
 ROOT_USER = "RJ"
 BASE_LIMIT = 1000
-NUM_LEVELS = 2
+NUM_LEVELS = 4
 NUM_THREADS = 200
 MAX_FRIENDS_ALLOWED = 10000
 
@@ -49,7 +49,7 @@ def fetch_vertex(user, limit, page):
 
 def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
     while len(nodes_to_visit) != 0:
-        print len(nodes_to_visit)
+        #print len(nodes_to_visit)
         node = nodes_to_visit.popleft()
 
         if (node not in visited_list):
