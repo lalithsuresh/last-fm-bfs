@@ -19,7 +19,7 @@ def sigterm_handler(signum, frame):
     sys.exit()
 
 
-def fetch_vertex(user, limit, page):
+def fetch_vertex(user, limit, page, level_count):
     #Consider a space in the user name
     temp_user="%20".join(user.split(' ')) 
     command = "http://ws.audioscrobbler.com/2.0/?method=user.getfriends"\
@@ -28,16 +28,25 @@ def fetch_vertex(user, limit, page):
               + "&page=" + str(page)\
               + "&api_key=" +API_KEY
     try:
-        data = urllib2.urlopen(command).read() # XML format
-        degree = int(re.search('total="(\d+)"', data).group(1)) # first 10 friends (because page=1 and limit=10).
-        friends = re.findall("<name>(.*)</name>", data) # number of friends of "rj"
+        # XML format
+        data = urllib2.urlopen(command).read() 
+        # First 10 friends (because page=1 and limit=10).
+        degree = int(re.search('total="(\d+)"', data).group(1)) 
         totalpages = int(re.search('totalPages="(\d+)"', data).group(1))
-        #Some corner cases
+        friends = []
+
+        # Some corner cases
         if (degree > MAX_FRIENDS_ALLOWED or totalpages == 0):
             return (None,None)
-        if (totalpages - page != 0):
-            print user, page,"of",totalpages
-            friends += fetch_vertex(user, limit, page + 1)[1] # 2nd element of tuple is list of friends
+
+        if (level_count != NUM_LEVELS):
+            # number of friends of "rj"
+            friends = re.findall("<name>(.*)</name>", data) 
+            if (totalpages - page != 0):
+                print user, page,"of",totalpages
+
+                # 2nd element of tuple is list of friends
+                friends += fetch_vertex(user, limit, page + 1, level_count)[1] 
 
         return (degree, friends)
     except:
@@ -47,13 +56,13 @@ def fetch_vertex(user, limit, page):
         print
         return (None, None)
 
-def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list):
+def worker_function(nodes_to_visit, degree_queue, friends_queue, visited_list, level_count):
     while len(nodes_to_visit) != 0:
         #print len(nodes_to_visit)
         node = nodes_to_visit.popleft()
 
         if (node not in visited_list):
-            degree, friends = fetch_vertex(node, BASE_LIMIT, 1)
+            degree, friends = fetch_vertex(node, BASE_LIMIT, 1, level_count)
 
             if (degree != None and friends != None):
                 #print "Visited " + str(node) + " " + str(degree)
@@ -74,7 +83,7 @@ if __name__ == '__main__':
         tmp = list(bfs_queue)[0:]
         #print tmp, bfs_queue, visited
         threads = [Thread(target=worker_function, \
-              args=(bfs_queue, degree_queue, friends_queue, visited))\
+              args=(bfs_queue, degree_queue, friends_queue, visited, level_count))\
               for i in xrange(NUM_THREADS)]
 
         for t in threads:
